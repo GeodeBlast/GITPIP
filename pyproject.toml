@@ -40,4 +40,4 @@ dependencies = [
 Repository = "https://github.com/XJ-04561/GITPIP.git"
 
 [project.scripts]
-GITPIP = "GITPIP"
+GITPIP = "GITPIP:__main__"

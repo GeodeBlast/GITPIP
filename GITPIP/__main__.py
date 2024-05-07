@@ -8,6 +8,7 @@ from collections import OrderedDict
 
 __package__ = "GITPIP"
 __version__ = 1.0
+
 if len(sys.argv) < 2:
     sys.argv += ["--help"]
 configDir = user_config_dir(__package__)
