@@ -1,6 +1,6 @@
-import sys, os, re, urllib.request as ur
+import sys, os
 from shutil import which
-from __init__ import GitUserbase, UnknownPackages
+from GITPIP.__init__ import GitUserbase, UnknownPackages
 
 from argparse import ArgumentParser, SUPPRESS
 from appdirs import user_config_dir

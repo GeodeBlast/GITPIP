@@ -39,3 +39,5 @@ dependencies = [
 [project.urls]
 Repository = "https://github.com/XJ-04561/GITPIP.git"
 
+[project.scripts]
+GITPIP = "GITPIP.__main__"
