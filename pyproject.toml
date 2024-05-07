@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "GITPIP"
+readme = "README.md"
+description = "PIP FROM GIT.\n(Or PyPi)"
+version = "1.0"
+requires-python = ">= 3.8"
+license = { file = "LICENSE"}
+keywords = ["git", "pip"]
+authors = [
+    {name = "Fredrik Sörensen", email = "fredrik.sorensen@foi.se"}
+]
+maintainers = [
+    {name = "Fredrik Sörensen", email = "fredrik.sorensen@foi.se"}
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+
+    "Intended Audience :: Developers",
+    "Topic :: Development",
+
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+
+    "Operating System :: OS Independent"
+]
+dependencies = [
+	"appdirs"
+]
+
+[project.urls]
+Repository = "https://github.com/XJ-04561/GITPIP.git"
+

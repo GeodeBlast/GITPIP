@@ -1,8 +1,9 @@
 import sys, os, re, urllib.request as ur
-from __init__ import GitUserbase, UnknownPackages, isOnPYPI
+from __init__ import GitUserbase, UnknownPackages
 
 from argparse import ArgumentParser, SUPPRESS
 from appdirs import user_config_dir
+from collections import OrderedDict
 
 __package__ = "GITPIP"
 __version__ = 1.0
@@ -43,22 +44,25 @@ mode = sys.argv[1].lower()
 match mode:
     case "update" | "upgrade" | "reinstall":
         com = ["install", "--force-reinstall", "--no-deps"]
-        users = GitUserbase(open(userFilename, "r+").read().strip().split() + args.users)
-        packs = [users.findOnGit(p) or p for p in args.packages]
-        if (badPacks := list(filter(lambda p: not p.startswith("git") and not isOnPYPI(p), packs))):
-            raise UnknownPackages(badPacks, users.users)
-        os.system(" ".join(exe+com+packs))
+        users = GitUserbase(open(userFilename, "r").read().strip().split() + args.users)
+        packs = OrderedDict(zip(args.packages, map(users.find, args.packages)))
+        if None in packs.values():
+            raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), gitUsers=users.users)
+        os.system(" ".join(exe+com+list(packs.values())))
+
     case "remove" | "uninstall":
         com = ["uninstall"]
         packs = args.packages
         os.system(" ".join(exe+com+packs))
+
     case "install":
         com = ["install"]
         users = GitUserbase(open(userFilename, "r").read().strip().split() + args.users)
-        packs = [users.findOnGit(p) or p for p in args.packages]
-        if (badPacks := list(filter(lambda p: not p.startswith("git") and not isOnPYPI(p), packs))):
-            raise UnknownPackages(badPacks, gitUsers=users.users)
-        os.system(" ".join(exe+com+packs))
+        packs = OrderedDict(zip(args.packages, map(users.find, args.packages)))
+        if None in packs.values():
+            raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), gitUsers=users.users)
+        os.system(" ".join(exe+com+list(packs.values())))
+
     case "users":
         users = set(open(userFilename, "r").read().strip().split())
         users.difference_update(args.rm)
@@ -67,6 +71,7 @@ match mode:
         users = list(users)
         for i in range(0, len(users), 3):
             print(" ".join(map("{:<19}".format, users[i:i+3])))
+
     case _:
         print(f"Unknown mode {mode!r}")
 
