@@ -1,4 +1,5 @@
 import sys, os, re, urllib.request as ur
+from shutil import which
 from __init__ import GitUserbase, UnknownPackages
 
 from argparse import ArgumentParser, SUPPRESS
@@ -38,7 +39,16 @@ modes.choices["users"].add_argument("--remove", dest="rm", metavar="Remove", nar
 
 args = parser.parse_args(sys.argv[1:])
 
-exe = ["py", "-m", "pip"] if os.name == "nt" else ["pip"]
+if os.name == "nt":
+    exe = ["py", "-m", "pip"]
+elif which("pip") is not None:
+    exe = ["pip"]
+elif which("pip3") is not None:
+    exe = ["pip3"]
+else:
+    print("Can't find a command for pip. Please install pip or create a proper alias for pip (E.g: 'pip' or 'pip3')")
+    exit(1)
+    
 mode = sys.argv[1].lower()
 
 match mode:

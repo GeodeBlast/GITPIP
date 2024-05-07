@@ -54,7 +54,7 @@ def urlExists(url : str):
         return False
 
 def isOnPyPi(package):
-        return urlExists(f"https://pypi.org/project/{package}/")
+    return urlExists(f"https://pypi.org/project/{package}/")
 
 class GitUserbase:
 
