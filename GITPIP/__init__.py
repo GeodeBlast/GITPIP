@@ -140,7 +140,7 @@ def mainCLI():
             parser.add_argument("packages", metavar="PACKAGE", nargs="+", default=[])
         if users is True:
             parser.add_argument("-u", "--user", "--users", dest="users", metavar="USER", nargs="+", action="extend", default=[])
-            parser.add_argument("-l", "--local", "--locals", dest="locals", metavar="USER", nargs="*", action="extend", default=[])
+            parser.add_argument("-l", "--local", "--locals", dest="locals", metavar="LOCAL", nargs="*", default=None)
 
     __package__ = "GITPIP"
     __version__ = "1.0"
@@ -198,7 +198,7 @@ def mainCLI():
     match mode:
         case "update" | "upgrade" | "reinstall":
             com = ["install", "--force-reinstall", "--no-deps"]
-            if args.locals:
+            if args.locals is not None:
                 com.append("-e")
                 locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines()+args.locals)))
                 packs = OrderedDict([(package, locals.find(package)) for package in args.packages])
@@ -218,7 +218,7 @@ def mainCLI():
 
         case "install":
             com = ["install"]
-            if args.locals:
+            if args.locals is not None:
                 com.append("-e")
                 locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines()+args.locals)))
                 packs = OrderedDict([(package, locals.find(package)) for package in args.packages])
