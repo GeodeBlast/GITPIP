@@ -22,7 +22,7 @@ class GitURL(URL):
         return obj
 
 class UnknownPackages(ModuleNotFoundError):
-    def __init__(self, packages : tuple[str]|str, gitUsers : tuple[str]|None=[], pypi=True):
+    def __init__(self, packages : tuple[str]|str, gitUsers : list[str]|None=[], locals : list[str]|None=[], pypi=True):
 
         if len(packages) == 0:
             msg = "Package not found."
@@ -36,6 +36,8 @@ class UnknownPackages(ModuleNotFoundError):
         sources = ["PyPi"] if pypi is True else []
         if gitUsers:
             sources.append( f"Github users {tuple(gitUsers)}")
+        if locals:
+            sources.extend(map(repr, locals))
         sourced = " Looked up on: " + ", ".join(sources)
         
         super().__init__(msg + sourced)
@@ -60,7 +62,6 @@ from PseudoPathy import PathGroup
 
 class LocalRepositories(PathGroup):
     
-    paths : PathGroup
     def __init__(self, paths : tuple[str]):
         super().__init__(*paths, purpose="r")
     
@@ -85,7 +86,7 @@ class GitUserbase:
     users : tuple[str]
     def __init__(self, users : tuple[str]|list[str]):
         
-        self.users = users
+        self.users = tuple(users)
     
     def findOnGit(self, package):
         
@@ -204,9 +205,9 @@ def mainCLI():
                 locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines()+args.locals)))
                 packs = OrderedDict([(package, locals.find(package)) for package in args.packages])
                 if None in packs.values():
-                    raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), locals=locals.paths)
+                    raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), locals=locals._roots)
             else:
-                users = GitUserbase(list(map(str.strip, filter(None, open(userFilename, "r").readlines()+args.users))))
+                users = GitUserbase(map(str.strip, filter(None, open(userFilename, "r").readlines()+args.users)))
                 packs = OrderedDict(zip(args.packages, map(users.find, args.packages)))
                 if None in packs.values():
                     raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), gitUsers=users.users)
@@ -224,9 +225,9 @@ def mainCLI():
                 locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines()+args.locals)))
                 packs = OrderedDict([(package, locals.find(package)) for package in args.packages])
                 if None in packs.values():
-                    raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), locals=locals.paths)
+                    raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), locals=locals._roots)
             else:
-                users = GitUserbase(list(map(str.strip, filter(None, open(userFilename, "r").readlines()+args.users))))
+                users = GitUserbase(map(str.strip, filter(None, open(userFilename, "r").readlines()+args.users)))
                 packs = OrderedDict(zip(args.packages, map(users.find, args.packages)))
                 if None in packs.values():
                     raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), gitUsers=users.users)
