@@ -140,7 +140,7 @@ def mainCLI():
             parser.add_argument("packages", metavar="PACKAGE", nargs="+", default=[])
         if users is True:
             parser.add_argument("-u", "--user", "--users", dest="users", metavar="USER", nargs="+", action="extend", default=[])
-            parser.add_argument("-l", dest="locals", metavar="LOCAL", action="store_const", const=True, default=None)
+            parser.add_argument("-l", dest="locals", metavar="LOCAL", action="store_const", const=[], default=None)
             parser.add_argument("--local", "--locals", dest="locals", metavar="LOCALS", nargs="*", default=None)
 
     __package__ = "GITPIP"
