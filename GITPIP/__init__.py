@@ -135,26 +135,6 @@ def mainCLI():
     
     from collections import OrderedDict
 
-    
-
-    __package__ = "GITPIP"
-    __version__ = 1.0
-
-    if len(sys.argv) < 2:
-        sys.argv += ["--help"]
-    
-    configDir = user_config_dir(__package__)
-    dataDir = user_data_dir(__package__)
-    os.chdir(dataDir)
-
-    os.makedirs(configDir, exist_ok=True)
-    userFilename = os.path.join(configDir, "users.txt")
-    localFilename = os.path.join(configDir, "locals.txt")
-    if not os.path.exists(userFilename):
-        open(userFilename, "w").close()
-    if not os.path.exists(localFilename):
-        open(localFilename, "w").close()
-
     def applyArgsTemplate(parser : ArgumentParser, users=False, packages=False):
         if packages is True:
             parser.add_argument("packages", metavar="PACKAGE", nargs="+", default=[])
@@ -162,8 +142,28 @@ def mainCLI():
             parser.add_argument("-u", "--user", "--users", dest="users", metavar="USER", nargs="+", action="extend", default=[])
             parser.add_argument("-l", "--local", "--locals", dest="locals", metavar="USER", nargs="*", action="extend", default=[])
 
+    __package__ = "GITPIP"
+    __version__ = "1.0"
+
+    if len(sys.argv) < 2:
+        sys.argv += ["--help"]
+    
+    configDir = user_config_dir(__package__)
+    dataDir = user_data_dir(__package__)
+
+    os.makedirs(configDir, exist_ok=True)
+    os.makedirs(dataDir, exist_ok=True)
+
+    userFilename = os.path.join(configDir, "users.txt")
+    localFilename = os.path.join(configDir, "locals.txt")
+
+    if not os.path.exists(userFilename): open(userFilename, "w").close()
+    if not os.path.exists(localFilename): open(localFilename, "w").close()
+
+    os.chdir(dataDir)
+
     parser = ArgumentParser(prog="GITPIP")
-    parser.add_argument("-v", "--version", action="version", version=str(__version__))
+    parser.add_argument("-v", "--version", action="version", version=__version__)
 
     modes = parser.add_subparsers(title="Modes", metavar="")
     for name, *aliases in [["install"], ["update", "upgrade", "reinstall"], ["remove", "uninstall"]]:
