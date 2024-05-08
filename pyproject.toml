@@ -33,7 +33,9 @@ classifiers = [
     "Operating System :: OS Independent"
 ]
 dependencies = [
-	"appdirs"
+	"appdirs",
+    "This@git+https://github.com/XJ-04561/This",
+    "PseudoPathy@git+https://github.com/XJ-04561/PseudoPathy"
 ]
 
 [project.urls]
