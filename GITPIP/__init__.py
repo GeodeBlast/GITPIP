@@ -56,6 +56,30 @@ def urlExists(url : str):
 def isOnPyPi(package):
     return urlExists(f"https://pypi.org/project/{package}/")
 
+from PseudoPathy import PathGroup
+
+class LocalRepositories(PathGroup):
+    
+    paths : PathGroup
+    def __init__(self, paths : tuple[str]):
+        super().__init__(*paths, purpose="r")
+    
+    def find(self, package : str):
+        
+        match len(results := self.findall(path=package)):
+            case 0:
+                return None
+            case 1:
+                return results[0]
+            case _ as size:
+                msg = "Packages were found in multiple sources:\n" + \
+                    "\n".join(map(lambda x:f"{x[1]:<70}[{x[0]+1:^8}]", enumerate(results))) + \
+                    "\nSelect py entering the # of the desired package source: "
+                # Not a digit or outside the range
+                while not (userString := input(msg).strip()).isdigit() or not (choice := int(userString)-1) in range(size):
+                    pass
+                return results[choice]
+
 class GitUserbase:
 
     users : tuple[str]
@@ -107,25 +131,36 @@ def mainCLI():
     from shutil import which
 
     from argparse import ArgumentParser, SUPPRESS
-    from appdirs import user_config_dir
+    from appdirs import user_config_dir, user_data_dir
+    
     from collections import OrderedDict
+
+    
 
     __package__ = "GITPIP"
     __version__ = 1.0
 
     if len(sys.argv) < 2:
         sys.argv += ["--help"]
+    
     configDir = user_config_dir(__package__)
+    dataDir = user_data_dir(__package__)
+    os.chdir(dataDir)
+
     os.makedirs(configDir, exist_ok=True)
     userFilename = os.path.join(configDir, "users.txt")
+    localFilename = os.path.join(configDir, "locals.txt")
     if not os.path.exists(userFilename):
         open(userFilename, "w").close()
+    if not os.path.exists(localFilename):
+        open(localFilename, "w").close()
 
     def applyArgsTemplate(parser : ArgumentParser, users=False, packages=False):
         if packages is True:
             parser.add_argument("packages", metavar="PACKAGE", nargs="+", default=[])
         if users is True:
             parser.add_argument("-u", "--user", "--users", dest="users", metavar="USER", nargs="+", action="extend", default=[])
+            parser.add_argument("-l", "--local", "--locals", dest="locals", metavar="USER", nargs="*", action="extend", default=[])
 
     parser = ArgumentParser(prog="GITPIP")
     parser.add_argument("-v", "--version", action="version", version=str(__version__))
@@ -134,6 +169,7 @@ def mainCLI():
     for name, *aliases in [["install"], ["update", "upgrade", "reinstall"], ["remove", "uninstall"]]:
         modes.add_parser(name, aliases=aliases, argument_default=SUPPRESS, help=f"{name.capitalize()} packages")
     modes.add_parser("users", help=f"Add/remove github users")
+    modes.add_parser("locals", help=f"Add/remove local source directories.")
 
     applyArgsTemplate(modes.choices["install"], users=True, packages=True)
     applyArgsTemplate(modes.choices["update"],  users=True, packages=True)
@@ -141,6 +177,9 @@ def mainCLI():
 
     modes.choices["users"].add_argument("--add", metavar="Add", nargs="*", default=[])
     modes.choices["users"].add_argument("--remove", dest="rm", metavar="Remove", nargs="*", default=[])
+
+    modes.choices["locals"].add_argument("--add", metavar="Add", nargs="*", default=[])
+    modes.choices["locals"].add_argument("--remove", dest="rm", metavar="Remove", nargs="*", default=[])
 
     args = parser.parse_args(sys.argv[1:])
 
@@ -159,10 +198,17 @@ def mainCLI():
     match mode:
         case "update" | "upgrade" | "reinstall":
             com = ["install", "--force-reinstall", "--no-deps"]
-            users = GitUserbase(open(userFilename, "r").read().strip().split() + args.users)
-            packs = OrderedDict(zip(args.packages, map(users.find, args.packages)))
-            if None in packs.values():
-                raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), gitUsers=users.users)
+            if args.locals:
+                com.append("-e")
+                locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines()+args.locals)))
+                packs = OrderedDict([(package, locals.find(package)) for package in args.packages])
+                if None in packs.values():
+                    raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), locals=locals.paths)
+            else:
+                users = GitUserbase(list(map(str.strip, filter(None, open(userFilename, "r").readlines()+args.users))))
+                packs = OrderedDict(zip(args.packages, map(users.find, args.packages)))
+                if None in packs.values():
+                    raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), gitUsers=users.users)
             os.system(" ".join(exe+com+list(packs.values())))
 
         case "remove" | "uninstall":
@@ -172,20 +218,38 @@ def mainCLI():
 
         case "install":
             com = ["install"]
-            users = GitUserbase(open(userFilename, "r").read().strip().split() + args.users)
-            packs = OrderedDict(zip(args.packages, map(users.find, args.packages)))
-            if None in packs.values():
-                raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), gitUsers=users.users)
+            if args.locals:
+                com.append("-e")
+                locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines()+args.locals)))
+                packs = OrderedDict([(package, locals.find(package)) for package in args.packages])
+                if None in packs.values():
+                    raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), locals=locals.paths)
+            else:
+                users = GitUserbase(list(map(str.strip, filter(None, open(userFilename, "r").readlines()+args.users))))
+                packs = OrderedDict(zip(args.packages, map(users.find, args.packages)))
+                if None in packs.values():
+                    raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), gitUsers=users.users)
             os.system(" ".join(exe+com+list(packs.values())))
 
         case "users":
-            users = set(open(userFilename, "r").read().strip().split())
-            users.difference_update(args.rm)
-            users.update(args.add)
-            open(userFilename, "w").write("\n".join(users))
+            users = set(map(str.strip, filter(None, open(userFilename, "r").readlines())))
+            if args.rm or args.add:
+                users.difference_update(args.rm)
+                users.update(args.add)
+                open(userFilename, "w").write("\n".join(users))
             users = list(users)
             for i in range(0, len(users), 3):
                 print(" ".join(map("{:<19}".format, users[i:i+3])))
+
+        case "locals":
+            locals = set(map(str.strip, filter(None, open(localFilename, "r").readlines())))
+            if args.rm or args.add:
+                locals.difference_update(args.rm)
+                locals.update(args.add)
+                open(localFilename, "w").write("\n".join(locals))
+            locals = list(locals)
+            for i in range(0, len(locals), 3):
+                print(" ".join(map("{:<19}".format, locals[i:i+3])))
 
         case _:
             print(f"Unknown mode {mode!r}")
