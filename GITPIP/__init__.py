@@ -205,7 +205,7 @@ def mainCLI():
                 locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines()+args.locals)))
                 packs = OrderedDict([(package, locals.find(package)) for package in args.packages])
                 if None in packs.values():
-                    raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), locals=locals._roots)
+                    raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), locals=locals._roots, pypi=False)
             else:
                 users = GitUserbase(map(str.strip, filter(None, open(userFilename, "r").readlines()+args.users)))
                 packs = OrderedDict(zip(args.packages, map(users.find, args.packages)))
@@ -225,7 +225,7 @@ def mainCLI():
                 locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines()+args.locals)))
                 packs = OrderedDict([(package, locals.find(package)) for package in args.packages])
                 if None in packs.values():
-                    raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), locals=locals._roots)
+                    raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), locals=locals._roots, pypi=False)
             else:
                 users = GitUserbase(map(str.strip, filter(None, open(userFilename, "r").readlines()+args.users)))
                 packs = OrderedDict(zip(args.packages, map(users.find, args.packages)))
