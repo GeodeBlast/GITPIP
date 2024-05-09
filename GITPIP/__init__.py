@@ -129,7 +129,7 @@ class GitUserbase:
 def mainCLI():
     
     import sys, os
-    from shutil import which
+    from shutil import which, rmtree
 
     from argparse import ArgumentParser, SUPPRESS
     from appdirs import user_config_dir, user_data_dir
@@ -216,6 +216,10 @@ def mainCLI():
                     if None in packs.values():
                         raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), gitUsers=users.users)
                 os.system(" ".join(exe+com+list(packs.values())))
+                if args.locals is not None:
+                    for pack in packs:
+                        rmtree(pack / (os.path.split(pack)[1]+".egg-info"), ignore_errors=True)
+                        rmtree(pack / os.path.split(pack)[1] / "__pycache__", ignore_errors=True)
 
             case "remove" | "uninstall":
                 com = ["uninstall"]
@@ -236,6 +240,10 @@ def mainCLI():
                     if None in packs.values():
                         raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), gitUsers=users.users)
                 os.system(" ".join(exe+com+list(packs.values())))
+                if args.locals is not None:
+                    for pack in packs:
+                        rmtree(pack / (os.path.split(pack)[1]+".egg-info"), ignore_errors=True)
+                        rmtree(pack / os.path.split(pack)[1] / "__pycache__", ignore_errors=True)
 
             case "users":
                 users = set(map(str.strip, filter(None, open(userFilename, "r").readlines())))
