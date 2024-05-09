@@ -166,7 +166,7 @@ def mainCLI():
     parser.add_argument("-v", "--version", action="version", version=__version__)
 
     modes = parser.add_subparsers(title="Modes", metavar="")
-    for name, *aliases in [["install"], ["update", "upgrade", "reinstall"], ["remove", "uninstall"]]:
+    for name, *aliases in [["install"], ["update", "upgrade", "reinstall"], ["remove", "uninstall"], ["test", "pytest"]]:
         modes.add_parser(name, aliases=aliases, argument_default=SUPPRESS, help=f"{name.capitalize()} packages")
     modes.add_parser("users", help=f"Add/remove github users")
     modes.add_parser("locals", help=f"Add/remove local source directories.")
@@ -174,6 +174,9 @@ def mainCLI():
     applyArgsTemplate(modes.choices["install"], users=True, packages=True)
     applyArgsTemplate(modes.choices["update"],  users=True, packages=True)
     applyArgsTemplate(modes.choices["remove"],              packages=True)
+    applyArgsTemplate(modes.choices["test"],                packages=True)
+
+    modes.choices["test"].add_argument("-d", "--dir", dest="directories", metavar="Directory", nargs="+", default=None)
 
     modes.choices["users"].add_argument("--add", metavar="Add", nargs="*", default=[])
     modes.choices["users"].add_argument("--remove", dest="rm", metavar="Remove", nargs="*", default=[])
@@ -184,6 +187,7 @@ def mainCLI():
     modes.choices["install"].add_argument("--debug", action="store_true")
     modes.choices["update"].add_argument("--debug", action="store_true")
     modes.choices["remove"].add_argument("--debug", action="store_true")
+    modes.choices["test"].add_argument("--debug", action="store_true")
     modes.choices["users"].add_argument("--debug", action="store_true")
     modes.choices["locals"].add_argument("--debug", action="store_true")
     
@@ -244,6 +248,29 @@ def mainCLI():
                     for pack in packs.values():
                         rmtree(pack / (os.path.split(pack)[1]+".egg-info"), ignore_errors=True)
                         rmtree(pack / os.path.split(pack)[1] / "__pycache__", ignore_errors=True)
+            
+            case "test":
+                import pytest
+                if args.directories is None:
+                    if args.locals is not None:
+                        locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines()+args.locals)))
+                    else:
+                        locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines())))
+                else:
+                    locals = LocalRepositories(*args.directories)
+                testPaths = []
+                for package in args.packages:
+                    path = locals.find(package=package)
+                    if path is None: raise UnknownPackages(package, pypi=False, locals=locals)
+                    testPaths.append(path)
+                for package, path in zip(args.packages, testPaths):
+                    pytest.main([os.path.join(path, "tests")])
+                    try:
+                        rmtree(os.path.join(path, "tests", "__pycache__"), ignore_errors=True)
+                        rmtree(os.path.join(path, package, "__pycache__"), ignore_errors=True)
+                        rmtree(os.path.join(path, ".pytest_cache"), ignore_errors=True)
+                    except:
+                        print(f"Failed to remove cache directories after pytest on {package=} in {path=}.")
 
             case "users":
                 users = set(map(str.strip, filter(None, open(userFilename, "r").readlines())))

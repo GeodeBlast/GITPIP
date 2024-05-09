@@ -34,6 +34,7 @@ classifiers = [
 ]
 dependencies = [
 	"appdirs",
+    "pytest",
     "This@git+https://github.com/XJ-04561/This",
     "PseudoPathy@git+https://github.com/XJ-04561/PseudoPathy"
 ]
