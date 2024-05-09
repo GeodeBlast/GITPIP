@@ -166,6 +166,7 @@ def mainCLI():
 
     parser = ArgumentParser(prog="GITPIP")
     parser.add_argument("-v", "--version", action="version", version=__version__)
+    parser.add_argument("--debug", action="store_true")
 
     modes = parser.add_subparsers(title="Modes", metavar="")
     for name, *aliases in [["install"], ["update", "upgrade", "reinstall"], ["remove", "uninstall"]]:
@@ -196,63 +197,68 @@ def mainCLI():
         exit(1)
         
     mode = sys.argv[1].lower()
+    try:
+        match mode:
+            case "update" | "upgrade" | "reinstall":
+                com = ["install", "--force-reinstall", "--no-deps"]
+                if args.locals is not None:
+                    com.append("-e")
+                    locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines()+args.locals)))
+                    packs = OrderedDict([(package, locals.find(package)) for package in args.packages])
+                    if None in packs.values():
+                        raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), locals=locals._roots, pypi=False)
+                else:
+                    users = GitUserbase(map(str.strip, filter(None, open(userFilename, "r").readlines()+args.users)))
+                    packs = OrderedDict(zip(args.packages, map(users.find, args.packages)))
+                    if None in packs.values():
+                        raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), gitUsers=users.users)
+                os.system(" ".join(exe+com+list(packs.values())))
 
-    match mode:
-        case "update" | "upgrade" | "reinstall":
-            com = ["install", "--force-reinstall", "--no-deps"]
-            if args.locals is not None:
-                com.append("-e")
-                locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines()+args.locals)))
-                packs = OrderedDict([(package, locals.find(package)) for package in args.packages])
-                if None in packs.values():
-                    raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), locals=locals._roots, pypi=False)
-            else:
-                users = GitUserbase(map(str.strip, filter(None, open(userFilename, "r").readlines()+args.users)))
-                packs = OrderedDict(zip(args.packages, map(users.find, args.packages)))
-                if None in packs.values():
-                    raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), gitUsers=users.users)
-            os.system(" ".join(exe+com+list(packs.values())))
+            case "remove" | "uninstall":
+                com = ["uninstall"]
+                packs = args.packages
+                os.system(" ".join(exe+com+packs))
 
-        case "remove" | "uninstall":
-            com = ["uninstall"]
-            packs = args.packages
-            os.system(" ".join(exe+com+packs))
+            case "install":
+                com = ["install"]
+                if args.locals is not None:
+                    com.append("-e")
+                    locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines()+args.locals)))
+                    packs = OrderedDict([(package, locals.find(package)) for package in args.packages])
+                    if None in packs.values():
+                        raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), locals=locals._roots, pypi=False)
+                else:
+                    users = GitUserbase(map(str.strip, filter(None, open(userFilename, "r").readlines()+args.users)))
+                    packs = OrderedDict(zip(args.packages, map(users.find, args.packages)))
+                    if None in packs.values():
+                        raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), gitUsers=users.users)
+                os.system(" ".join(exe+com+list(packs.values())))
 
-        case "install":
-            com = ["install"]
-            if args.locals is not None:
-                com.append("-e")
-                locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines()+args.locals)))
-                packs = OrderedDict([(package, locals.find(package)) for package in args.packages])
-                if None in packs.values():
-                    raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), locals=locals._roots, pypi=False)
-            else:
-                users = GitUserbase(map(str.strip, filter(None, open(userFilename, "r").readlines()+args.users)))
-                packs = OrderedDict(zip(args.packages, map(users.find, args.packages)))
-                if None in packs.values():
-                    raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), gitUsers=users.users)
-            os.system(" ".join(exe+com+list(packs.values())))
+            case "users":
+                users = set(map(str.strip, filter(None, open(userFilename, "r").readlines())))
+                if args.rm or args.add:
+                    users.difference_update(args.rm)
+                    users.update(args.add)
+                    open(userFilename, "w").write("\n".join(users))
+                users = list(users)
+                for i in range(0, len(users), 3):
+                    print(" ".join(map("{:<19}".format, users[i:i+3])))
 
-        case "users":
-            users = set(map(str.strip, filter(None, open(userFilename, "r").readlines())))
-            if args.rm or args.add:
-                users.difference_update(args.rm)
-                users.update(args.add)
-                open(userFilename, "w").write("\n".join(users))
-            users = list(users)
-            for i in range(0, len(users), 3):
-                print(" ".join(map("{:<19}".format, users[i:i+3])))
+            case "locals":
+                locals = set(map(str.strip, filter(None, open(localFilename, "r").readlines())))
+                if args.rm or args.add:
+                    locals.difference_update(args.rm)
+                    locals.update(args.add)
+                    open(localFilename, "w").write("\n".join(locals))
+                locals = list(locals)
+                for i in range(0, len(locals), 3):
+                    print(" ".join(map("{:<19}".format, locals[i:i+3])))
 
-        case "locals":
-            locals = set(map(str.strip, filter(None, open(localFilename, "r").readlines())))
-            if args.rm or args.add:
-                locals.difference_update(args.rm)
-                locals.update(args.add)
-                open(localFilename, "w").write("\n".join(locals))
-            locals = list(locals)
-            for i in range(0, len(locals), 3):
-                print(" ".join(map("{:<19}".format, locals[i:i+3])))
-
-        case _:
-            print(f"Unknown mode {mode!r}")
-
+            case _:
+                print(f"Unknown mode {mode!r}")
+    except Exception as e:
+        if args.debug:
+            raise e
+        else:
+            print(e)
+            exit(1)
