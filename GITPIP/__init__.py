@@ -162,11 +162,8 @@ def mainCLI():
     if not os.path.exists(userFilename): open(userFilename, "w").close()
     if not os.path.exists(localFilename): open(localFilename, "w").close()
 
-    os.chdir(dataDir)
-
     parser = ArgumentParser(prog="GITPIP")
     parser.add_argument("-v", "--version", action="version", version=__version__)
-    parser.add_argument("--debug", action="store_true")
 
     modes = parser.add_subparsers(title="Modes", metavar="")
     for name, *aliases in [["install"], ["update", "upgrade", "reinstall"], ["remove", "uninstall"]]:
@@ -184,6 +181,12 @@ def mainCLI():
     modes.choices["locals"].add_argument("--add", metavar="Add", nargs="*", default=[])
     modes.choices["locals"].add_argument("--remove", dest="rm", metavar="Remove", nargs="*", default=[])
 
+    modes.choices["install"].add_argument("--debug", action="store_true")
+    modes.choices["update"].add_argument("--debug", action="store_true")
+    modes.choices["remove"].add_argument("--debug", action="store_true")
+    modes.choices["users"].add_argument("--debug", action="store_true")
+    modes.choices["locals"].add_argument("--debug", action="store_true")
+    
     args = parser.parse_args(sys.argv[1:])
 
     if os.name == "nt":
@@ -200,7 +203,7 @@ def mainCLI():
     try:
         match mode:
             case "update" | "upgrade" | "reinstall":
-                com = ["install", "--force-reinstall", "--no-deps"]
+                com = ["install", "--force-reinstall", "--no-deps", "--cache-dir", repr(dataDir)]
                 if args.locals is not None:
                     com.append("-e")
                     locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines()+args.locals)))
@@ -220,7 +223,7 @@ def mainCLI():
                 os.system(" ".join(exe+com+packs))
 
             case "install":
-                com = ["install"]
+                com = ["install", "--cache-dir", repr(dataDir)]
                 if args.locals is not None:
                     com.append("-e")
                     locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines()+args.locals)))
