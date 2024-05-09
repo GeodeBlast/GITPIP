@@ -184,12 +184,12 @@ def mainCLI():
     modes.choices["locals"].add_argument("--add", metavar="Add", nargs="*", default=[])
     modes.choices["locals"].add_argument("--remove", dest="rm", metavar="Remove", nargs="*", default=[])
 
-    modes.choices["install"].add_argument("--debug", action="store_true")
-    modes.choices["update"].add_argument("--debug", action="store_true")
-    modes.choices["remove"].add_argument("--debug", action="store_true")
-    modes.choices["test"].add_argument("--debug", action="store_true")
-    modes.choices["users"].add_argument("--debug", action="store_true")
-    modes.choices["locals"].add_argument("--debug", action="store_true")
+    modes.choices["install"].add_argument("--debug", dest="debug", action="store_true", default=False)
+    modes.choices["update"].add_argument("--debug", dest="debug", action="store_true", default=False)
+    modes.choices["remove"].add_argument("--debug", dest="debug", action="store_true", default=False)
+    modes.choices["test"].add_argument("--debug", dest="debug", action="store_true", default=False)
+    modes.choices["users"].add_argument("--debug", dest="debug", action="store_true", default=False)
+    modes.choices["locals"].add_argument("--debug", dest="debug", action="store_true", default=False)
     
     args = parser.parse_args(sys.argv[1:])
 
@@ -252,10 +252,7 @@ def mainCLI():
             case "test":
                 import pytest
                 if args.directories is None:
-                    if args.locals is not None:
-                        locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines()+args.locals)))
-                    else:
-                        locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines())))
+                    locals = LocalRepositories(map(str.strip, filter(None, open(localFilename, "r").readlines())))
                 else:
                     locals = LocalRepositories(*args.directories)
                 testPaths = []
