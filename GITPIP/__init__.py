@@ -217,7 +217,7 @@ def mainCLI():
                         raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), gitUsers=users.users)
                 os.system(" ".join(exe+com+list(packs.values())))
                 if args.locals is not None:
-                    for pack in packs:
+                    for pack in packs.values():
                         rmtree(pack / (os.path.split(pack)[1]+".egg-info"), ignore_errors=True)
                         rmtree(pack / os.path.split(pack)[1] / "__pycache__", ignore_errors=True)
 
@@ -241,7 +241,7 @@ def mainCLI():
                         raise UnknownPackages(tuple(filter(lambda name: packs[name] is None, packs)), gitUsers=users.users)
                 os.system(" ".join(exe+com+list(packs.values())))
                 if args.locals is not None:
-                    for pack in packs:
+                    for pack in packs.values():
                         rmtree(pack / (os.path.split(pack)[1]+".egg-info"), ignore_errors=True)
                         rmtree(pack / os.path.split(pack)[1] / "__pycache__", ignore_errors=True)
 
