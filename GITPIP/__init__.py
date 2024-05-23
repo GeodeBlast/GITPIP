@@ -15,11 +15,14 @@ class GitURL(URL):
     
     user : str
     package : str
-    def __new__(cls, *, user, package):
-        obj = super().__new__(cls, f"https://github.com/{user}/{package}")
-        obj.user = user
-        obj.package = package
-        return obj
+    def __new__(cls, *, user, package, branch=None):
+        if branch is not None:
+            link += f"@{branch}"
+        return super().__new__(cls, f"https://github.com/{user}/{package}")
+    def __init__(self, *, user, package, branch=None):
+        self.user = user
+        self.package = package
+        self.branch = branch
 
 class UnknownPackages(ModuleNotFoundError):
     def __init__(self, packages : tuple[str]|str, gitUsers : list[str]|None=[], locals : list[str]|None=[], pypi=True):
@@ -112,11 +115,14 @@ class GitUserbase:
     
     def find(self, package):
         """For `pip install`"""
+        package, *branch = package.split("@")
+        if branch:
+            branch = branch[0]
         match len(results := self.get(package)):
             case 0:
                 return None
             case 1:
-                return results[0].package if isinstance(results[0], PyPiURL) else f"git+{results[0]}"
+                return results[0].package if isinstance(results[0], PyPiURL) else f"git+{results[0]}{'@'+branch if branch else ''}"
             case _ as size:
                 msg = "Packages were found on multiple sources:\n" + \
                     "\n".join(map(lambda x:f"{x[1]:<70}[{x[0]+1:^8}]", enumerate(results))) + \
@@ -124,7 +130,7 @@ class GitUserbase:
                 # Not a digit or outside the range
                 while not (userString := input(msg).strip()).isdigit() or not (choice := int(userString)-1) in range(size):
                     pass
-                return results[choice].package if isinstance(results[choice], PyPiURL) else f"git+{results[choice]}"
+                return results[choice].package if isinstance(results[choice], PyPiURL) else f"git+{results[choice]}{'@'+branch if branch else ''}"
 
 def mainCLI():
     
