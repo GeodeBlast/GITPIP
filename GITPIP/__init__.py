@@ -65,9 +65,6 @@ from PseudoPathy import PathGroup
 
 class LocalRepositories(PathGroup):
     
-    def __init__(self, paths : tuple[str]):
-        super().__init__(*paths, purpose="r")
-    
     def find(self, package : str):
         
         match len(results := self.findall(path=package)):
