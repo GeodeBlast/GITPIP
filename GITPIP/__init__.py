@@ -264,6 +264,7 @@ def mainCLI():
                     if path is None: raise UnknownPackages(package, pypi=False, locals=locals)
                     testPaths.append(path)
                 for package, path in zip(args.packages, testPaths):
+                    os.chdir(os.path.join(path, "tests"))
                     pytest.main([os.path.join(path, "tests")])
                     try:
                         rmtree(os.path.join(path, "tests", "__pycache__"), ignore_errors=True)
